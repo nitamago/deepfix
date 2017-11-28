@@ -1,3 +1,5 @@
+#! /usr/bin/python
+# -*- coding:utf-8 -*-
 """
 Copyright 2017 Rahul Gupta, Soham Pal, Aditya Kanade, Shirish Shevade.
 Indian Institute of Science.
@@ -15,13 +17,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import argparse, time
+import argparse
 import numpy as np
-import os, sys
+import os
 
 from process import build_dictionary, generate_binned_training_data, save_dictionaries, save_test_problems, vectorize_data, save_folds
 from util.helpers import done
 
+# パーサーの設定
 parser = argparse.ArgumentParser(description="Process 'C' dataset to be used in repair tasks")
 
 parser.add_argument("-t", "--task", help="specify the task", choices=['typo', 'ids'], default='typo')
@@ -34,13 +37,16 @@ parser.add_argument("--num_variants", type=int, help="maximum pairs per program"
 
 args = parser.parse_args()
 
+# モード設定
 if args.task == 'typo':
     kind_mutations = 'typo'    
 else:
     kind_mutations = 'ids'
 
+# データセットの選択
 dataset = args.dataset
 
+# 出力先の設定
 output_directory   = os.path.join('network_inputs')
     
 try:

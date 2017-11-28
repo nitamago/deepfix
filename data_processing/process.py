@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import sys
+sys.path.append('/home/hirose/git/deepfix')
 import numpy as np
 import os, random
 from util.helpers import get_lines
@@ -56,6 +58,7 @@ def rename_ids(corrupted_program, fix):
     
 def generate_binned_training_data(max_program_length, min_program_length, max_fix_length, kind_mutations,\
                                   max_mutations, max_variants, mutations_series):    
+    # FIXME tokenizerをjava用に変換
     tokenizer = C_Tokenizer()
     tokenize = tokenizer.tokenize
     
@@ -95,6 +98,7 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
             for source_file in os.listdir(basedir):
                 with open(os.path.join(basedir, source_file), 'r+') as f:
                     source_code = f.read()
+                    # FIXME tokenizeの実装をjava用に
                     tokenized_program, _, _, _ = tokenize(source_code, keep_literals=False, keep_names=keep_names)
 
                     # Correct pairs
