@@ -20,7 +20,7 @@ In order to run the server, you must install `bottle` and `paste` as well as `cl
 # Training 
 
 To train, organize the input into bins for training and validation, with each bin containing a
-set of source files that compile. Then run the script `data_processing/generate_data.py` to generate
+set of source files that compile. Then run the script `data_processing/data_generator.py` to generate
 training data. The data required for training the network is stored in the `network_inputs` directory.
 
 To train the network, use the script `neural_net/train.py`. This saves the model periodically in the
