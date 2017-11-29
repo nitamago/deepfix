@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description="Process 'C' dataset to be used in 
 parser.add_argument("-t", "--task", help="specify the task", choices=['typo', 'ids'], default='typo')
 parser.add_argument("--dataset", help="specify the task", choices=['iitk', 'codechef'], default='iitk')
 parser.add_argument("--max_prog_length", type=int, help="maximum length of the programs in tokens", default=400)
-parser.add_argument("--min_prog_length", type=int, help="minimum length of the programs in tokens", default=100)
+parser.add_argument("--min_prog_length", type=int, help="minimum length of the programs in tokens", default=1)
 parser.add_argument("--max_fix_length", type=int, help="maximum length of the fixes in tokens", default=20)
 parser.add_argument("--max_mutations", type=int, help="maximum mutations per program", default=5)
 parser.add_argument("--num_variants", type=int, help="maximum pairs per program", default=2)

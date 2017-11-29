@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 """
 Copyright 2017 Rahul Gupta, Soham Pal, Aditya Kanade, Shirish Shevade.
 Indian Institute of Science.
@@ -30,7 +31,7 @@ def rename_ids(corrupted_program, fix):
     fix_new = ''
     
     name_dictionary = {}
-    
+
     for token in corrupted_program.split():
         if '_<id>_' in token:
             if token not in name_dictionary:
@@ -93,9 +94,11 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
 
     for type_ in ['train', 'validation']:
         for fold in range(0, 5):
-            basedir = os.path.join('data', type_, 'fold_%d' % fold)
+            basedir = os.path.join('/home/hirose/git/deepfix', 'data', type_, 'fold_%d' % fold)
+            print basedir
 
             for source_file in os.listdir(basedir):
+                print source_file
                 with open(os.path.join(basedir, source_file), 'r+') as f:
                     source_code = f.read()
                     # FIXME tokenizeの実装をjava用に
@@ -105,8 +108,16 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
                     program_length = len(tokenized_program.split())
                     program_lengths.append(program_length)
 
+                    # トークン列のidをrenameする
                     if program_length >= min_program_length and program_length <= max_program_length:
+                        # FIXME tokenized_programはマスクされたものではダメでは?
+                        print "tokenized"
+                        print tokenized_program
                         cc_pair_prog, cc_pair_fix = rename_ids(tokenized_program, '')
+                        print "cc_pair_prog"
+                        print cc_pair_prog
+                        print "cc_pair_fix"
+                        print cc_pair_fix
 
                     token_strings[type_][fold]['programs'].append(cc_pair_prog)
                     token_strings[type_][fold]['fixes'].append(cc_pair_fix)
@@ -114,8 +125,11 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
                     program_lists[type_][fold].append(source_file)
 
                     total_mutate_calls += 1
+
+                    DEBUG_STOP()
             
                     try:
+                        # mutateする(データの増量化)
                         if mutations_series:
                             iterator = token_mutate_series(tokenized_program, max_mutations, max_variants)    
                         else:
@@ -318,3 +332,7 @@ def save_validation_users(destination, validation_users):
 
 def save_test_problems(destination, test_problems):
     np.save(os.path.join(destination, 'test_problems.npy'), test_problems)    
+
+def DEBUG_STOP():
+    print "For debugging program stop"
+    exit()
