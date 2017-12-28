@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 """
 Copyright 2017 Rahul Gupta, Soham Pal, Aditya Kanade, Shirish Shevade.
 Indian Institute of Science.
@@ -18,6 +19,10 @@ limitations under the License.
 import collections
 import regex as re
 from helpers import get_lines, recompose_program
+import subprocess
+import time
+from py4j.java_gateway import JavaGateway
+from py4j.protocol import Py4JError
 
 Token = collections.namedtuple('Token', ['typ', 'value', 'line', 'column'])
 
@@ -218,3 +223,37 @@ class C_Tokenizer():
             result = result[:idx+1]
 
         return self._sanitize_brackets(result), name_dict, name_sequence, literal_sequence
+
+
+class Java_Tokenizer():
+    def __init__(self):
+        self.start_server()
+
+    def start_server(self):
+        # クラスパスを指定して実行
+        args = (["java", "-cp",
+                 '/home/hirose/.pyenv/versions/2.7.14/share/py4j/py4j0.10.6.jar',
+                 '-jar', './SrcTokenizer.jar'])
+        subprocess.Popen(args)
+        # サーバー起動前に処理が下へ行くのを防ぐ
+        time.sleep(3) 
+        self.gateway = JavaGateway(start_callback_server=True)
+
+    def shutdown(self):
+        self.gateway.shutdown()
+
+    def tokenize(self, code, keep_format_specifiers=False, keep_names=True,
+                 keep_literals=False):
+        entry_point = self.gateway.entry_point
+        try:
+            tokens = entry_point.get_token_str(code)
+        except Py4JError as e:
+            print "Java parse error"
+            print e
+            self.shutdown()
+            raise Exception
+
+        name_dict = None
+        name_sequence = None
+        literal_sequence = None
+        return tokens, name_dict, name_sequence, literal_sequence

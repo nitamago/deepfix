@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
 """
 Copyright 2017 Rahul Gupta, Soham Pal, Aditya Kanade, Shirish Shevade.
 Indian Institute of Science.
@@ -15,6 +17,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import sys
+sys.path.append("/home/hirose/git/deepfix")
+
 import numpy as np
 import tensorflow as tf
 import os, time, sys
@@ -22,7 +27,6 @@ from neural_net.load_data import load_data
 from neural_net.model import model
 from util.helpers import make_dir_if_not_exists, calculate_token_level_accuracy, calculate_localization_accuracy, calculate_repair_accuracy
 from shutil import copyfile
-
 # Parse command line arguments
 import argparse
 

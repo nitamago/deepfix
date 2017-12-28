@@ -62,7 +62,8 @@ class model:
 
         if not self.bidirectional:
             self.cell = self._new_RNN_cell(self.memory_dim)
-            self.dec_outputs, self.dec_memory = tf.nn.seq2seq.embedding_attention_seq2seq(self.encoder_input, self.decoder_input,
+            #self.dec_outputs, self.dec_memory = tf.nn.seq2seq.embedding_attention_seq2seq(self.encoder_input, self.decoder_input,
+            self.dec_outputs, self.dec_memory = tf.contrib.legacy_seq2seq.embedding_attention_seq2seq(self.encoder_input, self.decoder_input,
                                                                                                             self.cell, vocabulary_size, vocabulary_size,
                                                                                                             embedding_dim, feed_previous=True)
         else:
@@ -76,7 +77,8 @@ class model:
             
         
         if trainable:
-            self.loss = tf.nn.seq2seq.sequence_loss(self.dec_outputs, self.labels, self.weights, vocabulary_size)
+            #self.loss = tf.nn.seq2seq.sequence_loss(self.dec_outputs, self.labels, self.weights, vocabulary_size)
+            self.loss = tf.contrib.legacy_seq2seq.sequence_loss(self.dec_outputs, self.labels, self.weights, vocabulary_size)
     
             self.optimizer = tf.train.AdamOptimizer()
             gvs = self.optimizer.compute_gradients(self.loss)

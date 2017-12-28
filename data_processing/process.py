@@ -21,7 +21,7 @@ sys.path.append('/home/hirose/git/deepfix')
 import numpy as np
 import os, random
 from util.helpers import get_lines
-from util.tokenizer import C_Tokenizer, EmptyProgramException, UnexpectedTokenException
+from util.tokenizer import Java_Tokenizer, C_Tokenizer, EmptyProgramException, UnexpectedTokenException
 
 class FixIDNotFoundInSource(Exception):
     pass
@@ -60,7 +60,8 @@ def rename_ids(corrupted_program, fix):
 def generate_binned_training_data(max_program_length, min_program_length, max_fix_length, kind_mutations,\
                                   max_mutations, max_variants, mutations_series):    
     # FIXME tokenizerをjava用に変換
-    tokenizer = C_Tokenizer()
+    tokenizer = Java_Tokenizer()
+    #tokenizer = C_Tokenizer()
     tokenize = tokenizer.tokenize
     
     if kind_mutations == 'typo':
@@ -107,12 +108,14 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
                     # Correct pairs
                     program_length = len(tokenized_program.split())
                     program_lengths.append(program_length)
+                    fix_length = 0
+                    fix_lengths.append(fix_length)
 
                     # トークン列のidをrenameする
                     if program_length >= min_program_length and program_length <= max_program_length:
                         # FIXME tokenized_programはマスクされたものではダメでは?
-                        print "tokenized"
-                        print tokenized_program
+                        # 正解なのでfixは無い
+                        # TODO answerのコードはfixなしのデータとして使えるかも
                         cc_pair_prog, cc_pair_fix = rename_ids(tokenized_program, '')
                         print "cc_pair_prog"
                         print cc_pair_prog
@@ -126,15 +129,20 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
 
                     total_mutate_calls += 1
 
-                    DEBUG_STOP()
-            
+                    # FIXME mutateをスキップする
+                    class SkipException(Exception):
+                        pass
                     try:
+                        raise SkipException
                         # mutateする(データの増量化)
                         if mutations_series:
                             iterator = token_mutate_series(tokenized_program, max_mutations, max_variants)    
                         else:
                             iterator = token_mutate(tokenized_program, max_mutations, max_variants)
                          
+                    except SkipException:
+                        print "mutate step is skipped"
+                        iterator = []
                     except FailedToMutateException:
                         print 'Failed to mutate', user_id, code_id
                         exceptions_in_mutate_call += 1
@@ -158,7 +166,7 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
 
                         if kind_mutations != 'ids': #### FOR NOW ####
                             raise
-                    
+
                     for corrupted_program, fix in iterator:
                         try:
                             corrupted_program_new, fix_new = rename_ids(corrupted_program, fix)
@@ -176,9 +184,12 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
                             token_strings[type_][fold]['fixes'].append(fix_new)
                             program_counts[type_][fold] += 1
                             program_lists[type_][fold].append(source_file)
-    
+
     program_lengths = np.sort(program_lengths)
     fix_lengths = np.sort(fix_lengths)
+
+    print program_lengths
+    print fix_lengths
     
     for fold in range(0, 5):
         assert(len(token_strings['validation'][fold]['programs']) == len(token_strings['validation'][fold]['fixes']))
@@ -190,6 +201,8 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
     print 'Mean fix length: Mean =', np.mean(fix_lengths), '\t95th %ile = ', fix_lengths[int(0.95 * len(fix_lengths))]
     print 'Total mutate calls:', total_mutate_calls
     print 'Exceptions in mutate() call:', exceptions_in_mutate_call, '\n'
+
+    tokenizer.shutdown()
 
     return token_strings, get_mutation_distribution(), program_lists
 
@@ -205,12 +218,14 @@ def build_dictionary(token_strings, drop_ids_in_fix=False):
                     length += 1
                     token = token.strip()
 
+                    # tokenにIDを割り当てる
                     if token not in tl_dict:
                         tl_dict[token] = len(tl_dict) + 1
 
     if drop_ids_in_fix and '_<id>_@' not in tl_dict:
         tl_dict['_<id>_@'] = len(tl_dict) + 1
     
+    # 予約語の追加
     tl_dict['_eos_'] = len(tl_dict) + 1
     tl_dict['_pad_'] = 0
     
@@ -218,6 +233,7 @@ def build_dictionary(token_strings, drop_ids_in_fix=False):
     
     rev_tl_dict = {}
 
+    # tl_dictをコピーしてるだけ?
     for key, value in tl_dict.iteritems():
         rev_tl_dict[value] = key
     
@@ -231,7 +247,7 @@ def load_dictionary(directory):
 
 def vectorize(tokens, vector_length, tl_dict, max_program_length, max_fix_length, drop_ids=False, reverse=False, vecFor='encoder'):    
     vec_tokens = []
-    
+
     for token in tokens.split():
         if drop_ids and '_<id>_' == token[:6] and token[-1] == '@':
             vec_tokens.append(tl_dict['_<id>_@'])
@@ -284,6 +300,7 @@ def vectorize_data(token_strings, tl_dict, max_program_length, max_fix_length, d
         
             assert(len(token_vectors[key][key2]['programs']) == len(token_vectors[key][key2]['fixes']))
     
+    print token_vectors
     return token_vectors
 
 def save_pairs(destination, token_vectors):
