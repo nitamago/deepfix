@@ -50,3 +50,8 @@ training is automatically used.
 
 
 `server / serve.py`スクリプトを使用して、訓練されたモデルの1つを提供します。 トレーニング中に達成された最高のチェックポイントが自動的に使用されます。
+
+# Attention
+
+data_generatorで学習データを作成する前には、network_inputの中を全て削除しておいたほうが良い。
+
