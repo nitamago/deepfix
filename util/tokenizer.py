@@ -244,16 +244,26 @@ class Java_Tokenizer():
 
     def tokenize(self, code, keep_format_specifiers=False, keep_names=True,
                  keep_literals=False):
+        name_dict = {}
+        name_sequence = []
+        literal_sequence = []
+        
         entry_point = self.gateway.entry_point
+        fixed_token = []
         try:
-            tokens = entry_point.get_token_str(code)
+            tokens = entry_point.get_masked_token_str(code).split()
+            for token in tokens:
+                if "/*" in token and "*/" in token:
+                    num = token.replace("/*", "").replace("*/", "")
+                    token = num + " ~ "
+                elif "_Var" in token:
+                    token = token.replace("_Var", "")
+                    token += "_<id>_@"
+                fixed_token.append(token)
         except Py4JError as e:
             print "Java parse error"
-            print e
-            self.shutdown()
             raise Exception
+            
 
-        name_dict = None
-        name_sequence = None
-        literal_sequence = None
+        tokens = " ".join(fixed_token)
         return tokens, name_dict, name_sequence, literal_sequence
