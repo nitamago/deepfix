@@ -17,9 +17,10 @@ limitations under the License.
 """
 
 import sys
-sys.path.append('/home/hirose/git/deepfix')
+sys.path.append('/home/hirose/git/Deepfix')
 import numpy as np
 import os, random
+import glob
 from util.helpers import get_lines
 from util.tokenizer import Java_Tokenizer, C_Tokenizer, EmptyProgramException, UnexpectedTokenException
 
@@ -95,15 +96,19 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
 
     for type_ in ['train', 'validation']:
         for fold in range(0, 5):
-            basedir = os.path.join('/home/hirose/git/deepfix', 'data', type_, 'fold_%d' % fold)
+            basedir = os.path.join('/home/hirose/git/Deepfix', 'data', type_, 'fold_%d' % fold)
             print basedir
 
             for source_file in os.listdir(basedir):
                 print source_file
                 with open(os.path.join(basedir, source_file), 'r+') as f:
                     source_code = f.read()
-                    # FIXME tokenizeの実装をjava用に
-                    tokenized_program, _, _, _ = tokenize(source_code, keep_literals=False, keep_names=keep_names)
+                    try:
+                        # FIXME tokenizeの実装をjava用に
+                        tokenized_program, _, _, _ = tokenize(source_code, keep_literals=False, keep_names=keep_names)
+                    except Exception:
+                        print("Failure in tokenization")
+                        continue
 
                     # Correct pairs
                     program_length = len(tokenized_program.split())
@@ -112,15 +117,16 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
                     fix_lengths.append(fix_length)
 
                     # トークン列のidをrenameする
+                    # 修正操作なしの学習データ
                     if program_length >= min_program_length and program_length <= max_program_length:
                         # FIXME tokenized_programはマスクされたものではダメでは?
                         # 正解なのでfixは無い
                         # TODO answerのコードはfixなしのデータとして使えるかも
-                        cc_pair_prog, cc_pair_fix = rename_ids(tokenized_program, '')
-                        print "cc_pair_prog"
-                        print cc_pair_prog
-                        print "cc_pair_fix"
-                        print cc_pair_fix
+                        cc_pair_prog, cc_pair_fix = rename_ids(tokenized_program, '<end>')
+                        #print "cc_pair_prog"
+                        #print cc_pair_prog
+                        #print "cc_pair_fix"
+                        #print cc_pair_fix
 
                     token_strings[type_][fold]['programs'].append(cc_pair_prog)
                     token_strings[type_][fold]['fixes'].append(cc_pair_fix)
@@ -166,6 +172,13 @@ def generate_binned_training_data(max_program_length, min_program_length, max_fi
 
                         if kind_mutations != 'ids': #### FOR NOW ####
                             raise
+
+                    # FIXME iteratorに適当な情報を入力する
+                    iterator = []
+                    q_id = os.path.basename(source_file).split('.')[0]
+                    for fix_file in glob.glob("./data/fix/"+q_id+"*"):
+                        with open(fix_file) as f:
+                            iterator.append((cc_pair_prog, f.read()))
 
                     for corrupted_program, fix in iterator:
                         try:
@@ -300,7 +313,7 @@ def vectorize_data(token_strings, tl_dict, max_program_length, max_fix_length, d
         
             assert(len(token_vectors[key][key2]['programs']) == len(token_vectors[key][key2]['fixes']))
     
-    print token_vectors
+    #print token_vectors
     return token_vectors
 
 def save_pairs(destination, token_vectors):
